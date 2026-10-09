@@ -35,7 +35,7 @@ jobs:
       # the .props fallback paths work in CI without machine-wide integration.
       - name: Restore vcpkg cache
         id: cache-vcpkg
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: vcpkg
           key: vcpkg-x64-windows-${{ hashFiles('vcpkg.json') }}
@@ -45,7 +45,11 @@ jobs:
         run: |
           git clone https://github.com/microsoft/vcpkg.git vcpkg --depth 1
           .\vcpkg\bootstrap-vcpkg.bat -disableMetrics
-          .\vcpkg\vcpkg install --triplet x64-windows
+          # Classic mode installs to vcpkg/installed/, matching the path that
+          # PreBuildEvents guard-check. Manifest mode (default) installs to
+          # vcpkg_installed/ instead, causing the guards to miss and parallel
+          # PreBuildEvents to race for the vcpkg lock under /m builds.
+          .\vcpkg\vcpkg install simpleamqpclient paho-mqttpp3 --triplet x64-windows --classic
         shell: pwsh
 
       # ── OpenDDS ────────────────────────────────────────────────────────────
@@ -56,7 +60,7 @@ jobs:
       # Both Debug and Release configurations link the same Release-only OpenDDS
       # libs, so this cache is shared across matrix entries (no config suffix).
       - name: Restore OpenDDS cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: |
             OpenDDS/bin

@@ -16,6 +16,9 @@ rem Subsequent builds: exits immediately (opendds_idl.exe already present).
 set "INSTALL_DIR=%~1"
 if "%INSTALL_DIR%"=="" ( echo ERROR: Usage: %~nx0 ^<install-dir^> & exit /b 1 )
 
+rem Normalize early so INSTALL_DIR_ABS is always set regardless of which Perl path is taken.
+for %%F in ("%INSTALL_DIR%") do set "INSTALL_DIR_ABS=%%~fF"
+
 if exist "%INSTALL_DIR%\bin\opendds_idl.exe" if exist "%INSTALL_DIR%\bin\tao_idl.exe" exit /b 0
 
 echo.
