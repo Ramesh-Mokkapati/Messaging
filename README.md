@@ -15,7 +15,7 @@ also has its own solution for working on one protocol at a time.
 
 ```
 Messaging.sln          ← combined solution (all 9 projects)
-vcpkg.json             ← vcpkg manifest (paho-mqttpp3 + simple-amqp-client)
+vcpkg.json             ← vcpkg manifest (paho-mqttpp3 + simpleamqpclient)
 vcpkg/                 ← vcpkg bootstrap clone (gitignored, auto-created)
 MQTT/
 ├── MQTT_PubSub.sln

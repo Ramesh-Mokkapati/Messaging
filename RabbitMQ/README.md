@@ -63,7 +63,7 @@ The repo root contains a `vcpkg.json` manifest and a `vcpkg/` clone
 ```
 
 After `integrate install`, packages listed in `vcpkg.json` (including
-`simple-amqp-client` and its `rabbitmq-c` dependency) install
+`simpleamqpclient` and its `rabbitmq-c` dependency) install
 automatically on the first build. `RabbitMQ.props` also includes a
 direct `VCPKG_ROOT`-based fallback so the project links correctly even
 without `integrate install`.

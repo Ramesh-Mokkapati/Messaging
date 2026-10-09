@@ -23,10 +23,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up MSBuild
-        uses: microsoft/setup-msbuild@v2
+        uses: microsoft/setup-msbuild@v3
 
       # ── vcpkg ──────────────────────────────────────────────────────────────
       # Cache the full vcpkg directory (bootstrap exe + installed packages).
@@ -85,7 +85,7 @@ jobs:
       # paho DLLs, SimpleAmqpClient DLLs, OpenDDS/ACE/TAO DLLs) into the
       # output dir, so the artifact is self-contained and runnable as-is.
       - name: Upload binaries
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.configuration }}-x64
           path: bin/x64/${{ matrix.configuration }}/
@@ -103,7 +103,7 @@ jobs:
         configuration: [Debug, Release]
     steps:
       - name: Merge into single ${{ matrix.configuration }} archive
-        uses: actions/upload-artifact/merge@v4
+        uses: actions/upload-artifact/merge@v7
         with:
           name: ${{ matrix.configuration }}
           pattern: ${{ matrix.configuration }}-*

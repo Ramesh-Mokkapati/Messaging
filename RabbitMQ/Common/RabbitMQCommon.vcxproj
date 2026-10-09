@@ -39,12 +39,12 @@
 
   <PropertyGroup Label="UserMacros" />
 
-  <!-- Install simple-amqp-client (and its rabbitmq-c / Boost deps) via
+  <!-- Install simpleamqpclient (and its rabbitmq-c / Boost deps) via
        vcpkg before any source file is compiled.  vcpkg is bootstrapped
        automatically if it is not already present at $(VCPKG_ROOT). -->
   <ItemDefinitionGroup>
     <PreBuildEvent>
-      <Message>Restoring vcpkg dependency: simple-amqp-client</Message>
+      <Message>Restoring vcpkg dependency: simpleamqpclient</Message>
       <Command>
 if not exist "$(VCPKG_ROOT)\vcpkg.exe" (
   if not exist "$(VCPKG_ROOT)\" (
