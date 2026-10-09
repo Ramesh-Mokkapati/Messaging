@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets" />
+
+  <!--
+    These three assume you ran DDS_ROOT\setenv.cmd (or otherwise set
+    ACE_ROOT/TAO_ROOT/DDS_ROOT as real environment variables) *before*
+    launching Visual Studio, so MSBuild inherits them as properties.
+    If you'd rather hardcode them, replace the Condition-guarded
+    defaults below with literal paths, e.g.:
+      <DDS_ROOT>C:\OpenDDS</DDS_ROOT>
+  -->
+  <PropertyGroup Label="UserMacros">
+    <!--
+      DDS_ROOT is the CMake install prefix (contains bin/, lib/, include/dds/, include/FACE/).
+      ACE/TAO headers and DLLs are NOT copied by cmake install - they remain
+      in the build tree (see ACE_TAO_BUILD_DIR below).
+      If you set DDS_ROOT / ACE_ROOT / TAO_ROOT as env vars they override these defaults.
+    -->
+    <DDS_ROOT Condition="'$(DDS_ROOT)'==''">$(MSBuildThisFileDirectory)..\opendds</DDS_ROOT>
+    <!--
+      ACE/TAO headers and DLLs are NOT copied by cmake install; they stay
+      in the ACE/TAO build subtree under the OpenDDS source dir.
+      ACE_ROOT = ace_tao dir (ace/pre.h is at $ACE_ROOT/ace/pre.h)
+      TAO_ROOT = ace_tao/TAO (tao/ORB.h is at $TAO_ROOT/tao/ORB.h)
+    -->
+    <ACE_TAO_BUILD_DIR Condition="'$(ACE_TAO_BUILD_DIR)'==''">$(DDS_ROOT)\..\opendds-src\build\ace_tao</ACE_TAO_BUILD_DIR>
+    <ACE_ROOT Condition="'$(ACE_ROOT)'==''">$(ACE_TAO_BUILD_DIR)</ACE_ROOT>
+    <TAO_ROOT Condition="'$(TAO_ROOT)'==''">$(ACE_TAO_BUILD_DIR)\TAO</TAO_ROOT>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!--
+      DDS headers at include/dds/ and include/FACE/.
+      ACE headers at ACE_TAO_BUILD_DIR/ace/ (e.g. ace/pre.h).
+      TAO headers at ACE_TAO_BUILD_DIR/TAO/tao/ (e.g. tao/ORB.h).
+      $(MSBuildThisFileDirectory)Common holds IDL-generated type-support headers.
+    -->
+    <IncludePath>$(DDS_ROOT)\include;$(ACE_TAO_BUILD_DIR);$(ACE_TAO_BUILD_DIR)\TAO;$(MSBuildThisFileDirectory)Common;$(ProjectDir);$(IncludePath)</IncludePath>
+    <LibraryPath>$(DDS_ROOT)\lib;$(ACE_TAO_BUILD_DIR)\lib;$(LibraryPath)</LibraryPath>
+    <!--
+      opendds_idl and tao_idl are in DDS_ROOT\bin.
+      Their runtime DLLs (ACEd.dll, TAO*.dll, TAO_IDL_FEd.dll, etc.) are all in
+      ACE_TAO_BUILD_DIR\lib — must be on PATH during custom build steps.
+      DDS_ROOT\lib holds OpenDDS DLLs needed at runtime by publisher/subscriber.
+    -->
+    <ExecutablePath>$(DDS_ROOT)\bin;$(DDS_ROOT)\lib;$(ACE_TAO_BUILD_DIR)\lib;$(ACE_TAO_BUILD_DIR)\bin;$(ExecutablePath)</ExecutablePath>
+  </PropertyGroup>
+
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;__ACE_INLINE__;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <!-- ACE/TAO headers have a hard #error requiring C++17 (Global_Macros.h).
+           The DDS C++11 IDL mapping (-Lc++11 in the custom build step)
+           is independent of this compiler flag. -->
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <SDLCheck>true</SDLCheck>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+
+  <!-- OpenDDS cmake install only produces Release libs (no "d" suffix).
+       ACE/TAO also have both variants, but OpenDDS_Dcps.dll was built
+       against Release ACE — must use Release ACE here to avoid CRT/DLL
+       conflicts at runtime. -->
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Debug'">
+    <Link>
+      <AdditionalDependencies>
+        OpenDDS_Dcps.lib;
+        OpenDDS_Rtps.lib;
+        OpenDDS_Rtps_Udp.lib;
+        TAO.lib;
+        TAO_AnyTypeCode.lib;
+        TAO_BiDirGIOP.lib;
+        TAO_CodecFactory.lib;
+        TAO_IORTable.lib;
+        TAO_PI.lib;
+        TAO_PortableServer.lib;
+        TAO_Valuetype.lib;
+        ACE.lib;
+        %(AdditionalDependencies)
+      </AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)'=='Release'">
+    <Link>
+      <AdditionalDependencies>
+        OpenDDS_Dcps.lib;
+        OpenDDS_Rtps.lib;
+        OpenDDS_Rtps_Udp.lib;
+        TAO.lib;
+        TAO_AnyTypeCode.lib;
+        TAO_BiDirGIOP.lib;
+        TAO_CodecFactory.lib;
+        TAO_IORTable.lib;
+        TAO_PI.lib;
+        TAO_PortableServer.lib;
+        TAO_Valuetype.lib;
+        ACE.lib;
+        %(AdditionalDependencies)
+      </AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+</Project>

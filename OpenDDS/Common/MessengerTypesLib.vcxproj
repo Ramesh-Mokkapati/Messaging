@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>17.0</VCProjectVersion>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{33333333-3333-3333-3333-333333333333}</ProjectGuid>
+    <RootNamespace>MessengerTypesLib</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+    <UseDebugLibraries Condition="'$(Configuration)'=='Debug'">true</UseDebugLibraries>
+    <UseDebugLibraries Condition="'$(Configuration)'=='Release'">false</UseDebugLibraries>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings" />
+  <ImportGroup Label="Shared" />
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(VCTargetsPath)\Microsoft.Cpp.UserSettings.props" Condition="exists('$(VCTargetsPath)\Microsoft.Cpp.UserSettings.props')" />
+    <Import Project="$(MSBuildThisFileDirectory)..\OpenDDS.props" Condition="exists('$(MSBuildThisFileDirectory)..\OpenDDS.props')" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <!-- Fail fast with a clear message when OpenDDS is not installed.
+       The IDL compiler is invoked via a CustomBuild step below; without
+       DDS_ROOT set to a real OpenDDS tree, that step emits the cryptic
+       "The system cannot find the path specified" error.  This event
+       surfaces the real problem — and the fix — before MSBuild tries to
+       run opendds_idl / tao_idl. -->
+  <ItemDefinitionGroup>
+    <PreBuildEvent>
+      <Message>Setting up OpenDDS (one-time build ~30-90 min if not already present)</Message>
+      <Command>
+call "$(MSBuildThisFileDirectory)..\setup-opendds.bat" "$(DDS_ROOT)"
+if errorlevel 1 exit 1
+      </Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <PropertyGroup>
+    <OutDir>$(MSBuildThisFileDirectory)..\..\lib\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(MSBuildThisFileDirectory)..\..\obj\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
+    <TargetName>MessengerTypesLib</TargetName>
+  </PropertyGroup>
+  <!--
+    IDL -> C++11-mapped DDS type support code generation.
+    Generated files land next to Messenger.idl (this project's own
+    directory) so they can be referenced below as normal relative-
+    path ClCompile/ClInclude items, and so Publisher/Subscriber can
+    find the headers via $(SolutionDir)Common on their include path
+    (see OpenDDS.props).
+
+    Requires DDS_ROOT/TAO_ROOT/ACE_ROOT to be set (e.g. by running
+    DDS_ROOT\setenv.cmd before launching Visual Studio) — see
+    OpenDDS.props and README.md.
+  -->
+  <ItemGroup>
+    <CustomBuild Include="Messenger.idl">
+      <Message Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Generating C++11-mapped DDS type support from Messenger.idl</Message>
+      <Message Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Generating C++11-mapped DDS type support from Messenger.idl</Message>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">set "DDS_ROOT=$(DDS_ROOT)\..\opendds-src"
+set "ACE_ROOT=$(ACE_ROOT)"
+set "TAO_ROOT=$(TAO_ROOT)"
+"$(DDS_ROOT)\bin\opendds_idl.exe" -Lc++11 -o "$(ProjectDir)." "$(ProjectDir)Messenger.idl"
+if errorlevel 1 exit /b 1
+"$(DDS_ROOT)\bin\tao_idl.exe" --idl-version 4 -I"$(DDS_ROOT)\include" -I"$(ACE_TAO_BUILD_DIR)\TAO" -I"$(ACE_TAO_BUILD_DIR)" -I"$(ProjectDir)." -o "$(ProjectDir)." "$(ProjectDir)MessengerTypeSupport.idl"
+if errorlevel 1 exit /b 1
+echo #ifndef MESSENGERS_H_STUB_&gt;"$(ProjectDir)MessengerS.h"
+echo #define MESSENGERS_H_STUB_&gt;&gt;"$(ProjectDir)MessengerS.h"
+echo #include "MessengerC.h"&gt;&gt;"$(ProjectDir)MessengerS.h"
+echo namespace POA_Messenger {}&gt;&gt;"$(ProjectDir)MessengerS.h"
+echo #endif&gt;&gt;"$(ProjectDir)MessengerS.h"
+echo #include "MessengerS.h"&gt;"$(ProjectDir)MessengerS.cpp"</Command>
+      <Command Condition="'$(Configuration)|$(Platform)'=='Release|x64'">set "DDS_ROOT=$(DDS_ROOT)\..\opendds-src"
+set "ACE_ROOT=$(ACE_ROOT)"
+set "TAO_ROOT=$(TAO_ROOT)"
+"$(DDS_ROOT)\bin\opendds_idl.exe" -Lc++11 -o "$(ProjectDir)." "$(ProjectDir)Messenger.idl"
+if errorlevel 1 exit /b 1
+"$(DDS_ROOT)\bin\tao_idl.exe" --idl-version 4 -I"$(DDS_ROOT)\include" -I"$(ACE_TAO_BUILD_DIR)\TAO" -I"$(ACE_TAO_BUILD_DIR)" -I"$(ProjectDir)." -o "$(ProjectDir)." "$(ProjectDir)MessengerTypeSupport.idl"
+if errorlevel 1 exit /b 1
+echo #ifndef MESSENGERS_H_STUB_&gt;"$(ProjectDir)MessengerS.h"
+echo #define MESSENGERS_H_STUB_&gt;&gt;"$(ProjectDir)MessengerS.h"
+echo #include "MessengerC.h"&gt;&gt;"$(ProjectDir)MessengerS.h"
+echo namespace POA_Messenger {}&gt;&gt;"$(ProjectDir)MessengerS.h"
+echo #endif&gt;&gt;"$(ProjectDir)MessengerS.h"
+echo #include "MessengerS.h"&gt;"$(ProjectDir)MessengerS.cpp"</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(ProjectDir)MessengerC.h;$(ProjectDir)MessengerS.h;$(ProjectDir)MessengerS.cpp;$(ProjectDir)MessengerTypeSupport.idl;$(ProjectDir)MessengerTypeSupportImpl.h;$(ProjectDir)MessengerTypeSupportImpl.cpp;$(ProjectDir)MessengerTypeSupportC.h;$(ProjectDir)MessengerTypeSupportC.cpp;$(ProjectDir)MessengerTypeSupportS.h;$(ProjectDir)MessengerTypeSupportS.cpp</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(ProjectDir)MessengerC.h;$(ProjectDir)MessengerS.h;$(ProjectDir)MessengerS.cpp;$(ProjectDir)MessengerTypeSupport.idl;$(ProjectDir)MessengerTypeSupportImpl.h;$(ProjectDir)MessengerTypeSupportImpl.cpp;$(ProjectDir)MessengerTypeSupportC.h;$(ProjectDir)MessengerTypeSupportC.cpp;$(ProjectDir)MessengerTypeSupportS.h;$(ProjectDir)MessengerTypeSupportS.cpp</Outputs>
+    </CustomBuild>
+  </ItemGroup>
+  <!--
+    These files do not exist on disk until the CustomBuild step above
+    has run once — Solution Explorer will show them as missing until
+    your first build. That's expected/normal for generated-code
+    projects (this mirrors what OpenDDS's own MPC-generated vcxproj
+    files do). Just build the solution once and they'll appear.
+  -->
+  <ItemGroup>
+    <!-- Always-present stub: keeps VS from silently dropping this project from
+         the build graph when the IDL-generated .cpp files don't yet exist. -->
+    <ClCompile Include="MessengerTypesLib_force_build.cpp" />
+    <!-- IDL-generated files — created by the CustomBuild step above. -->
+    <ClCompile Include="MessengerS.cpp" />
+    <ClCompile Include="MessengerTypeSupportImpl.cpp" />
+    <ClCompile Include="MessengerTypeSupportC.cpp" />
+    <ClCompile Include="MessengerTypeSupportS.cpp" />
+    <ClInclude Include="MessengerC.h" />
+    <ClInclude Include="MessengerS.h" />
+    <ClInclude Include="MessengerTypeSupportImpl.h" />
+    <ClInclude Include="MessengerTypeSupportC.h" />
+    <ClInclude Include="MessengerTypeSupportS.h" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets" />
+</Project>

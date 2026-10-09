@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>17.0</VCProjectVersion>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{77777777-7777-7777-7777-777777777777}</ProjectGuid>
+    <RootNamespace>RabbitMQConsumer</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+    <UseDebugLibraries Condition="'$(Configuration)'=='Debug'">true</UseDebugLibraries>
+    <UseDebugLibraries Condition="'$(Configuration)'=='Release'">false</UseDebugLibraries>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings" />
+  <ImportGroup Label="Shared" />
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(VCTargetsPath)\Microsoft.Cpp.UserSettings.props" Condition="exists('$(VCTargetsPath)\Microsoft.Cpp.UserSettings.props')" />
+    <Import Project="$(MSBuildThisFileDirectory)..\RabbitMQ.props" Condition="exists('$(MSBuildThisFileDirectory)..\RabbitMQ.props')" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <OutDir>$(MSBuildThisFileDirectory)..\..\bin\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(MSBuildThisFileDirectory)..\..\obj\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
+    <TargetName>RabbitMQConsumer</TargetName>
+  </PropertyGroup>
+  <!-- Needs the shared classes' headers, which live in ..\Common. -->
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(MSBuildThisFileDirectory)..\Common;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <PostBuildEvent>
+      <Message>Copying SimpleAmqpClient runtime DLLs to $(OutDir)</Message>
+      <Command>
+xcopy /Y /D "$(VCPKG_BIN)\SimpleAmqpClient.7.dll" "$(OutDir)"
+xcopy /Y /D "$(VCPKG_BIN)\rabbitmq.4.dll" "$(OutDir)"
+      </Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="RabbitMQConsumer.cpp" />
+    <ClInclude Include="RabbitMQConsumer.h" />
+  </ItemGroup>
+  <!-- Building via the solution, this both orders the build (library
+       first) and auto-links RabbitMQCommon.lib — no need to list it
+       under AdditionalDependencies. -->
+  <ItemGroup>
+    <ProjectReference Include="..\Common\RabbitMQCommon.vcxproj">
+      <Project>{55555555-5555-5555-5555-555555555555}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <!-- So plain F5 / Ctrl+F5 works without manual setup. -->
+  <PropertyGroup>
+    <LocalDebuggerWorkingDirectory>$(OutDir)</LocalDebuggerWorkingDirectory>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets" />
+</Project>

@@ -1,0 +1,110 @@
+name: CI
+
+on:
+  push:
+    branches: ["main", "master"]
+  pull_request:
+    branches: ["main", "master"]
+
+jobs:
+  build:
+    name: ${{ matrix.configuration }}|x64
+    runs-on: windows-2022
+
+    # The very first run must clone OpenDDS and compile ACE/TAO + OpenDDS from
+    # source (30-90 min). Set to the GitHub-hosted-runner maximum so the cold
+    # build never times out; the OpenDDS cache makes every subsequent run fast.
+    timeout-minutes: 360
+
+    strategy:
+      fail-fast: false
+      matrix:
+        configuration: [Debug, Release]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      # ── vcpkg ──────────────────────────────────────────────────────────────
+      # Cache the full vcpkg directory (bootstrap exe + installed packages).
+      # MQTT.props and RabbitMQ.props resolve VCPKG_ROOT to vcpkg/ at the
+      # repo root automatically, so no `vcpkg integrate install` is needed —
+      # the .props fallback paths work in CI without machine-wide integration.
+      - name: Restore vcpkg cache
+        id: cache-vcpkg
+        uses: actions/cache@v4
+        with:
+          path: vcpkg
+          key: vcpkg-x64-windows-${{ hashFiles('vcpkg.json') }}
+
+      - name: Set up vcpkg
+        if: steps.cache-vcpkg.outputs.cache-hit != 'true'
+        run: |
+          git clone https://github.com/microsoft/vcpkg.git vcpkg --depth 1
+          .\vcpkg\bootstrap-vcpkg.bat -disableMetrics
+          .\vcpkg\vcpkg install --triplet x64-windows
+        shell: pwsh
+
+      # ── OpenDDS ────────────────────────────────────────────────────────────
+      # Cache the cmake --install outputs (OpenDDS headers/libs/DLLs/tools) and
+      # the ACE/TAO build tree (headers + libs that OpenDDS.props points at).
+      # setup-opendds.bat exits immediately when opendds_idl.exe is already
+      # present, so a cache hit skips the entire 30-90 min compile.
+      # Both Debug and Release configurations link the same Release-only OpenDDS
+      # libs, so this cache is shared across matrix entries (no config suffix).
+      - name: Restore OpenDDS cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            OpenDDS/bin
+            OpenDDS/include
+            OpenDDS/lib
+            OpenDDS/share
+            opendds-src/build/ace_tao
+          key: opendds-windows-${{ hashFiles('OpenDDS/setup-opendds.bat') }}
+
+      # ── Build ──────────────────────────────────────────────────────────────
+      # On a cache miss, the PreBuildEvent in MessengerTypesLib fires
+      # setup-opendds.bat here and blocks until OpenDDS is fully compiled.
+      # All nine projects (MQTT, RabbitMQ, OpenDDS publisher/subscriber pairs)
+      # are built in one pass; /m enables parallel compilation.
+      - name: Build
+        run: |
+          msbuild Messaging.sln `
+            /p:Configuration=${{ matrix.configuration }} `
+            /p:Platform=x64 `
+            /m `
+            /v:minimal `
+            /nologo
+        shell: pwsh
+
+      # Post-build events copy all runtime DLLs and config files (rtps.ini,
+      # paho DLLs, SimpleAmqpClient DLLs, OpenDDS/ACE/TAO DLLs) into the
+      # output dir, so the artifact is self-contained and runnable as-is.
+      - name: Upload binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.configuration }}-x64
+          path: bin/x64/${{ matrix.configuration }}/
+          if-no-files-found: warn
+
+  # ── Merge ───────────────────────────────────────────────────────────────────
+  # Combine the per-configuration artifacts into a single named archive so
+  # consumers download one zip instead of two.
+  merge:
+    name: Merge ${{ matrix.configuration }} artifacts
+    runs-on: ubuntu-24.04
+    needs: build
+    strategy:
+      matrix:
+        configuration: [Debug, Release]
+    steps:
+      - name: Merge into single ${{ matrix.configuration }} archive
+        uses: actions/upload-artifact/merge@v4
+        with:
+          name: ${{ matrix.configuration }}
+          pattern: ${{ matrix.configuration }}-*
+          delete-merged: true

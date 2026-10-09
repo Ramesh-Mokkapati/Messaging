@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="PropertySheets" />
+  <PropertyGroup Label="UserMacros" />
+
+  <!--
+    If you installed paho-mqttpp3 via `vcpkg integrate install`, you
+    don't need anything below: vcpkg's own machine-wide property
+    sheet already puts every installed package's headers/libs on
+    every C++ project's search paths automatically.
+
+    This IncludePath/LibraryPath fallback only matters if you're
+    using vcpkg *without* running `vcpkg integrate install` (e.g. a
+    portable/CI checkout) — set VCPKG_ROOT (as an environment
+    variable or by editing the default below) and these pick it up.
+  -->
+  <PropertyGroup>
+    <VCPKG_ROOT Condition="'$(VCPKG_ROOT)'==''">$(MSBuildThisFileDirectory)..\vcpkg</VCPKG_ROOT>
+    <IncludePath>$(VCPKG_ROOT)\installed\x64-windows\include;$(IncludePath)</IncludePath>
+    <LibraryPath Condition="'$(Configuration)'=='Debug'">$(VCPKG_ROOT)\installed\x64-windows\debug\lib;$(LibraryPath)</LibraryPath>
+    <LibraryPath Condition="'$(Configuration)'=='Release'">$(VCPKG_ROOT)\installed\x64-windows\lib;$(LibraryPath)</LibraryPath>
+    <VCPKG_BIN Condition="'$(Configuration)'=='Debug'">$(VCPKG_ROOT)\installed\x64-windows\debug\bin</VCPKG_BIN>
+    <VCPKG_BIN Condition="'$(Configuration)'=='Release'">$(VCPKG_ROOT)\installed\x64-windows\bin</VCPKG_BIN>
+  </PropertyGroup>
+
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <PreprocessorDefinitions>WIN32;_CRT_SECURE_NO_WARNINGS;PAHO_MQTTPP_IMPORTS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <!-- MSVC's earliest /std:c++NN option is c++14 (a superset of
+           C++11) — there is no dedicated "C++11" switch. Paho C++
+           itself requires C++11 or later; c++14 satisfies that. -->
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <SDLCheck>true</SDLCheck>
+      <WarningLevel>Level3</WarningLevel>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <!-- Usually redundant when `vcpkg integrate install` has been
+           run (it auto-links every installed library project-wide),
+           but listed explicitly so the project also links correctly
+           without it. paho-mqttpp3 (the C++ wrapper) needs the
+           underlying Paho C async library (paho-mqtt3a) even though
+           our code only uses the synchronous mqtt::client; the C++
+           library is built on top of the async C client internally. -->
+      <AdditionalDependencies>paho-mqttpp3.lib;paho-mqtt3a.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+</Project>

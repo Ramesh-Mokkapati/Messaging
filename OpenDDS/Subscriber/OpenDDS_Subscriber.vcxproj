@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>17.0</VCProjectVersion>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{22222222-2222-2222-2222-222222222222}</ProjectGuid>
+    <RootNamespace>OpenDDSSubscriber</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+    <UseDebugLibraries Condition="'$(Configuration)'=='Debug'">true</UseDebugLibraries>
+    <UseDebugLibraries Condition="'$(Configuration)'=='Release'">false</UseDebugLibraries>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings" />
+  <ImportGroup Label="Shared" />
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(VCTargetsPath)\Microsoft.Cpp.UserSettings.props" Condition="exists('$(VCTargetsPath)\Microsoft.Cpp.UserSettings.props')" />
+    <Import Project="$(MSBuildThisFileDirectory)..\OpenDDS.props" Condition="exists('$(MSBuildThisFileDirectory)..\OpenDDS.props')" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <ItemDefinitionGroup>
+    <PreBuildEvent>
+      <Message>Setting up OpenDDS (one-time build ~30-90 min if not already present)</Message>
+      <Command>
+call "$(MSBuildThisFileDirectory)..\setup-opendds.bat" "$(DDS_ROOT)"
+if errorlevel 1 exit 1
+      </Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
+  <PropertyGroup>
+    <OutDir>$(MSBuildThisFileDirectory)..\..\bin\$(Platform)\$(Configuration)\</OutDir>
+    <IntDir>$(MSBuildThisFileDirectory)..\..\obj\$(ProjectName)\$(Platform)\$(Configuration)\</IntDir>
+    <TargetName>OpenDDSSubscriber</TargetName>
+  </PropertyGroup>
+  <ItemGroup>
+    <ClCompile Include="Subscriber.cpp" />
+    <ClCompile Include="DataReaderListenerImpl.cpp" />
+    <ClInclude Include="DataReaderListenerImpl.h" />
+  </ItemGroup>
+  <!-- Building via the solution, this both orders the build (library
+       first) and auto-links MessengerTypesLib.lib — no need to list
+       it under AdditionalDependencies. -->
+  <ItemGroup>
+    <ProjectReference Include="..\Common\MessengerTypesLib.vcxproj">
+      <Project>{33333333-3333-3333-3333-333333333333}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\rtps.ini" />
+  </ItemGroup>
+  <ItemDefinitionGroup>
+    <Link>
+      <SubSystem>Console</SubSystem>
+    </Link>
+    <PostBuildEvent>
+      <Message>Copy runtime DLLs and rtps.ini next to subscriber exe</Message>
+      <Command>xcopy /Y /Q "$(DDS_ROOT)\lib\*.dll" "$(OutDir)"
+copy /Y "$(ACE_TAO_BUILD_DIR)\lib\ACE.dll" "$(OutDir)"
+copy /Y "$(ACE_TAO_BUILD_DIR)\lib\TAO.dll" "$(OutDir)"
+copy /Y "$(ACE_TAO_BUILD_DIR)\lib\TAO_AnyTypeCode.dll" "$(OutDir)"
+copy /Y "$(ACE_TAO_BUILD_DIR)\lib\TAO_BiDirGIOP.dll" "$(OutDir)"
+copy /Y "$(ACE_TAO_BUILD_DIR)\lib\TAO_CodecFactory.dll" "$(OutDir)"
+copy /Y "$(ACE_TAO_BUILD_DIR)\lib\TAO_IORTable.dll" "$(OutDir)"
+copy /Y "$(ACE_TAO_BUILD_DIR)\lib\TAO_PI.dll" "$(OutDir)"
+copy /Y "$(ACE_TAO_BUILD_DIR)\lib\TAO_PortableServer.dll" "$(OutDir)"
+copy /Y "$(ACE_TAO_BUILD_DIR)\lib\TAO_Valuetype.dll" "$(OutDir)"
+copy /Y "$(MSBuildThisFileDirectory)..\rtps.ini" "$(OutDir)rtps.ini"</Command>
+    </PostBuildEvent>
+  </ItemDefinitionGroup>
+  <!-- So plain F5 / Ctrl+F5 from this project works without manual setup. -->
+  <PropertyGroup>
+    <LocalDebuggerWorkingDirectory>$(OutDir)</LocalDebuggerWorkingDirectory>
+    <LocalDebuggerCommandArguments>-DCPSConfigFile rtps.ini</LocalDebuggerCommandArguments>
+    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets" />
+</Project>

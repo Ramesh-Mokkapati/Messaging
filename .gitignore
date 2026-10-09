@@ -1,0 +1,42 @@
+# ── Build outputs ───────────────────────────────────────────────
+# Matches bin/, lib/, obj/ at any depth (solution root, MQTT/, RabbitMQ/, etc.)
+bin/
+lib/
+obj/
+
+# ── Visual Studio IDE ────────────────────────────────────────────
+.vs/
+*.vcxproj.user
+*.suo
+*.aps
+
+# ── vcpkg ────────────────────────────────────────────────────────
+# Bootstrap clone — reproducible from vcpkg.json, not source code
+vcpkg/
+# Package install trees generated from vcpkg.json
+vcpkg_installed/
+
+# ── OpenDDS cmake artifacts ──────────────────────────────────────
+# Source + cmake build tree (~2 GB, cloned + compiled by setup-opendds.bat)
+opendds-src/
+# Portable Strawberry Perl (auto-downloaded by setup-opendds.bat if Perl absent)
+perl/
+# cmake --install outputs: headers, DLLs, .libs, cmake configs
+# DDS_ROOT defaults to the OpenDDS/ subfolder (case-insensitive on NTFS)
+OpenDDS/include/
+OpenDDS/share/
+
+# ── IDL-generated type-support files ─────────────────────────────
+# Re-created on every build by the MessengerTypesLib CustomBuild step
+OpenDDS/Common/MessengerC.h
+OpenDDS/Common/MessengerC.inl
+OpenDDS/Common/MessengerS.h
+OpenDDS/Common/MessengerS.cpp
+OpenDDS/Common/MessengerTypeSupport.idl
+OpenDDS/Common/MessengerTypeSupportC.h
+OpenDDS/Common/MessengerTypeSupportC.cpp
+OpenDDS/Common/MessengerTypeSupportC.inl
+OpenDDS/Common/MessengerTypeSupportImpl.h
+OpenDDS/Common/MessengerTypeSupportImpl.cpp
+OpenDDS/Common/MessengerTypeSupportS.h
+OpenDDS/Common/MessengerTypeSupportS.cpp
