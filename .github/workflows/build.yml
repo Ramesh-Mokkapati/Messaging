@@ -60,6 +60,10 @@ jobs:
       # present, so a cache hit skips the entire 30-90 min compile.
       # Both Debug and Release configurations link the same Release-only OpenDDS
       # libs, so this cache is shared across matrix entries (no config suffix).
+      # opendds-src/dds/idl is needed too: the IDL step sets DDS_ROOT to the
+      # source tree and opendds_idl reads dds/idl/IDLTemplate.txt from it. On a
+      # cache hit setup-opendds.bat skips the clone, so anything not listed
+      # here is missing. (Bump the "-v2" suffix whenever this list changes.)
       - name: Restore OpenDDS cache
         uses: actions/cache@v5
         with:
@@ -69,7 +73,8 @@ jobs:
             OpenDDS/lib
             OpenDDS/share
             opendds-src/build/ace_tao
-          key: opendds-windows-${{ hashFiles('OpenDDS/setup-opendds.bat') }}
+            opendds-src/dds/idl
+          key: opendds-windows-v2-${{ hashFiles('OpenDDS/setup-opendds.bat') }}
 
       # ── Build ──────────────────────────────────────────────────────────────
       # On a cache miss, the PreBuildEvent in MessengerTypesLib fires
