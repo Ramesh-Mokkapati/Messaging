@@ -3,6 +3,7 @@ name: CI
 on:
   push:
     branches: ["main", "master"]
+    tags:     ["v*.*.*"]
   pull_request:
     branches: ["main", "master"]
 
@@ -112,3 +113,47 @@ jobs:
           name: ${{ matrix.configuration }}
           pattern: ${{ matrix.configuration }}-*
           delete-merged: true
+
+  # ── Release ─────────────────────────────────────────────────────────────────
+  # On a v*.*.* tag, publish the Release output as a GitHub Release
+  # (Messaging-<tag>-x64.zip): the six publisher/subscriber exes plus every
+  # runtime DLL and rtps.ini the post-build events copied next to them.
+  # Waits for the merge job, which deletes Release-x64 after folding it into
+  # the "Release" artifact.
+  release:
+    name: Publish GitHub Release
+    runs-on: ubuntu-24.04
+    needs: merge
+    if: startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write       # required to create / update a GitHub Release
+    steps:
+      - name: Download Release artifact
+        uses: actions/download-artifact@v8
+        with:
+          name: Release
+          path: package
+
+      # The build uploads with if-no-files-found: warn, so make sure nothing
+      # is missing before publishing.
+      - name: Check package
+        run: |
+          cd package
+          for exe in MQTTPublisher MQTTSubscriber RabbitMQPublisher RabbitMQConsumer OpenDDSPublisher OpenDDSSubscriber; do
+            test -f "$exe.exe" || { echo "::error::$exe.exe missing from the Release artifact"; exit 1; }
+          done
+          test -f rtps.ini || { echo "::error::rtps.ini missing from the Release artifact"; exit 1; }
+
+      - name: Zip package
+        run: |
+          cd package
+          zip -r "../Messaging-${{ github.ref_name }}-x64.zip" . -x '*.pdb' '*.ilk' '*.lib' '*.exp' '*.iobj' '*.ipdb'
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: Messaging-${{ github.ref_name }}-x64.zip
+          generate_release_notes: true   # auto-generates notes from merged PRs / commits
+          # v1.2.0-rc1 etc. become pre-releases, so they never count as the "latest" release
+          # that downstream packaging (the ComponentSuite installer) picks up.
+          prerelease: ${{ contains(github.ref_name, '-') }}
