@@ -149,6 +149,30 @@ jobs:
           done
           test -f rtps.ini || { echo "::error::rtps.ini missing from the Release artifact"; exit 1; }
 
+      # Every exe/DLL must load on a clean machine: no Debug C++ runtime (not
+      # redistributable), and every imported DLL is either in the package, a
+      # standard Windows DLL, or part of the VC++ 2015-2022 runtime the
+      # installer requires.
+      - name: Check runtime dependencies
+        run: |
+          command -v objdump > /dev/null || { echo "::error::objdump not found, so the dependency check cannot run"; exit 1; }
+          cd package
+          shopt -s nullglob nocaseglob
+          allowed='^(kernel32|user32|gdi32|advapi32|shell32|ole32|oleaut32|ws2_32|mswsock|iphlpapi|netapi32|crypt32|rpcrt4|bcrypt|ncrypt|secur32|shlwapi|version|dbghelp|psapi|userenv|winmm|dnsapi|normaliz|wldap32|api-ms-win-[a-z0-9-]+|msvcp140(_1|_2|_atomic_wait|_codecvt_ids)?|vcruntime140(_1)?|concrt140|ucrtbase)\.dll$'
+          debugcrt='^(msvcp140d|msvcp140_1d|msvcp140_2d|vcruntime140d|vcruntime140_1d|concrt140d|ucrtbased)\.dll$'
+          present=$(ls | tr 'A-Z' 'a-z')
+          fail=0
+          for f in *.exe *.dll; do
+            for dep in $(objdump -p "$f" | sed -n 's/^[[:space:]]*DLL Name: //p' | tr 'A-Z' 'a-z'); do
+              if [[ $dep =~ $debugcrt ]]; then
+                echo "::error::$f needs the Debug C++ runtime ($dep), which isn't redistributable"; fail=1
+              elif ! grep -qxF "$dep" <<< "$present" && ! [[ $dep =~ $allowed ]]; then
+                echo "::error::$f needs $dep, which isn't in the package"; fail=1
+              fi
+            done
+          done
+          exit $fail
+
       - name: Zip package
         run: |
           cd package

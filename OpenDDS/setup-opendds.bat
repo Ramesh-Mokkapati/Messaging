@@ -161,19 +161,23 @@ if not exist "%BUILD_DIR%\ALL_BUILD.vcxproj" (
 )
 
 rem ============================================================
-rem  Build + Install (Release then Debug)
+rem  Build + Install (Debug then Release)
+rem  Both configurations install the same file names into the same
+rem  prefix, so the last install wins. Release goes last so the DLLs
+rem  that get copied next to the apps (and shipped in releases) are
+rem  Release builds, not Debug ones that need ACEd.dll / the debug CRT.
 rem ============================================================
-echo Building OpenDDS Release ^(may take 30-90 minutes^)...
-"%CMAKE%" --build "%BUILD_DIR%" --config Release --parallel
-if errorlevel 1 ( echo ERROR: Release build failed. & exit /b 1 )
-"%CMAKE%" --install "%BUILD_DIR%" --config Release
-if errorlevel 1 ( echo ERROR: Release install failed. & exit /b 1 )
-
-echo Building OpenDDS Debug...
+echo Building OpenDDS Debug ^(may take 30-90 minutes^)...
 "%CMAKE%" --build "%BUILD_DIR%" --config Debug --parallel
 if errorlevel 1 ( echo ERROR: Debug build failed. & exit /b 1 )
 "%CMAKE%" --install "%BUILD_DIR%" --config Debug
 if errorlevel 1 ( echo ERROR: Debug install failed. & exit /b 1 )
+
+echo Building OpenDDS Release...
+"%CMAKE%" --build "%BUILD_DIR%" --config Release --parallel
+if errorlevel 1 ( echo ERROR: Release build failed. & exit /b 1 )
+"%CMAKE%" --install "%BUILD_DIR%" --config Release
+if errorlevel 1 ( echo ERROR: Release install failed. & exit /b 1 )
 
 rem ============================================================
 rem  Copy tao_idl.exe from ACE/TAO build tree to install bin

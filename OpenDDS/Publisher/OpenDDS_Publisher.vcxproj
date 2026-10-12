@@ -76,6 +76,7 @@ copy /Y "$(ACE_TAO_BUILD_DIR)\lib\TAO_CodecFactory.dll" "$(OutDir)"
 copy /Y "$(ACE_TAO_BUILD_DIR)\lib\TAO_IORTable.dll" "$(OutDir)"
 copy /Y "$(ACE_TAO_BUILD_DIR)\lib\TAO_PI.dll" "$(OutDir)"
 copy /Y "$(ACE_TAO_BUILD_DIR)\lib\TAO_PortableServer.dll" "$(OutDir)"
+copy /Y "$(ACE_TAO_BUILD_DIR)\lib\TAO_Svc_Utils.dll" "$(OutDir)"
 copy /Y "$(ACE_TAO_BUILD_DIR)\lib\TAO_Valuetype.dll" "$(OutDir)"
 copy /Y "$(MSBuildThisFileDirectory)..\rtps.ini" "$(OutDir)rtps.ini"</Command>
     </PostBuildEvent>

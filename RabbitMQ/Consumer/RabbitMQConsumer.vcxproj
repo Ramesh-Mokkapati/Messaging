@@ -44,10 +44,14 @@
       <AdditionalIncludeDirectories>$(MSBuildThisFileDirectory)..\Common;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <PostBuildEvent>
-      <Message>Copying SimpleAmqpClient runtime DLLs to $(OutDir)</Message>
+      <Message>Copying vcpkg runtime DLLs (SimpleAmqpClient + dependencies) to $(OutDir)</Message>
       <Command>
-xcopy /Y /D "$(VCPKG_BIN)\SimpleAmqpClient.7.dll" "$(OutDir)"
-xcopy /Y /D "$(VCPKG_BIN)\rabbitmq.4.dll" "$(OutDir)"
+rem Every DLL in vcpkg's bin (this package plus its dependencies, e.g.
+rem OpenSSL / boost). robocopy retries when parallel projects copy the
+rem same file; exit codes below 8 mean success.
+robocopy "$(VCPKG_BIN)" "$(OutDir)." *.dll /R:5 /W:1 /NJH /NJS /NP /NDL
+if %ERRORLEVEL% GEQ 8 exit /b 1
+exit /b 0
       </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
